@@ -18,7 +18,7 @@ This Home Assistant integration allows you to monitor Bitcoin mining statistics 
 2. In HACS, click on "Integrations"
 3. Click the "..." menu in the top right corner
 4. Select "Custom repositories"
-5. Add the URL of this repository: `https://github.com/your_github_username/bitcoin_mining`
+5. Add the URL of this repository: `https://github.com/apfrancis1992/MineMonitor`
 6. Select "Integration" as the category
 7. Click "ADD"
 8. Search for "Bitcoin Mining Monitor" in the integrations tab
