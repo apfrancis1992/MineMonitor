@@ -1,12 +1,12 @@
 {
   "domain": "minemonitor",
   "name": "MineMonitor",
-  "codeowners": ["@your_github_username"],
+  "codeowners": ["@apfrancis1992"],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/your_github_username/minemonitor",
+  "documentation": "https://github.com/apfrancis1992/MineMonitor",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/your_github_username/minemonitor/issues",
+  "issue_tracker": "https://github.com/apfrancis1992/MineMonitor/issues",
   "requirements": [],
   "version": "0.1.0"
 }
