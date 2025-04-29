@@ -2,5 +2,12 @@
   "name": "MineMonitor",
   "render_readme": true,
   "domains": ["sensor"],
-  "homeassistant": "2023.3.0"
+  "homeassistant": "2023.3.0",
+  "hacs": "1.6.0",
+  "iot_class": "local_polling",
+  "country": ["US", "GB", "DE", "CA", "AU"],
+  "category": "integration",
+  "description": "Home Assistant integration for monitoring a Public Pool instance to get worker and network statistics",
+  "image": "images/logo.png",
+  "color": "#F7931A"
 }
