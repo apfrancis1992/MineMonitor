@@ -30,7 +30,18 @@ def convert_to_th_per_second(hashrate):
     if hashrate is None:
         return None
     # Convert from H/s to TH/s (1 TH/s = 1,000,000,000,000 H/s)
-    return float(hashrate) / 1_000_000_000_000
+    # Format to 2 decimal places
+    return round(float(hashrate) / 1_000_000_000_000, 2)
+
+def format_difficulty(difficulty):
+    """Format difficulty value with no decimals."""
+    if difficulty is None:
+        return None
+    try:
+        # Convert to integer by rounding
+        return round(float(difficulty))
+    except (ValueError, TypeError):
+        return difficulty
 
 # Sensor types for client data
 CLIENT_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
@@ -240,7 +251,11 @@ class MinemonitorSensor(CoordinatorEntity, SensorEntity):
         if self._sensor_type == "client" and self._btc_address:
             # Return client-level data
             client_data = self.coordinator.data["client"].get(self._btc_address, {})
-            return client_data.get(self.entity_description.key)
+            value = client_data.get(self.entity_description.key)
+            # Format difficulty with no decimals
+            if self.entity_description.key == "bestDifficulty":
+                return format_difficulty(value)
+            return value
             
         elif self._sensor_type == "worker" and self._btc_address and self._worker_idx is not None:
             # Return worker-level data
@@ -252,13 +267,10 @@ class MinemonitorSensor(CoordinatorEntity, SensorEntity):
                 # Get the value
                 value = worker_data.get(self.entity_description.key)
                 
-                # Convert string values to float if needed
-                if isinstance(value, str) and self.entity_description.key == "bestDifficulty":
-                    try:
-                        return float(value)
-                    except (ValueError, TypeError):
-                        return value
-                # Convert hashrates from H/s to TH/s
+                # Format difficulty with no decimals
+                if self.entity_description.key == "bestDifficulty":
+                    return format_difficulty(value)
+                # Convert hashrates from H/s to TH/s with 2 decimal places
                 elif self.entity_description.key == "hashRate":
                     try:
                         return convert_to_th_per_second(float(value))
@@ -271,8 +283,11 @@ class MinemonitorSensor(CoordinatorEntity, SensorEntity):
             # Return network data
             network_data = self.coordinator.data.get("network", {})
             
-            # Convert networkhashps from H/s to TH/s if applicable
-            if self.entity_description.key == "networkhashps":
+            # Format difficulty with no decimals
+            if self.entity_description.key == "difficulty":
+                return format_difficulty(network_data.get(self.entity_description.key))
+            # Convert networkhashps from H/s to TH/s with 2 decimal places
+            elif self.entity_description.key == "networkhashps":
                 try:
                     value = network_data.get(self.entity_description.key)
                     return convert_to_th_per_second(float(value))
@@ -282,11 +297,11 @@ class MinemonitorSensor(CoordinatorEntity, SensorEntity):
             return network_data.get(self.entity_description.key)
             
         elif self._sensor_type == "info" and self.entity_description.key == "highscore_bestDifficulty":
-            # Return high score data
+            # Return high score data with formatted difficulty
             info_data = self.coordinator.data.get("info", {})
             high_scores = info_data.get("highScores", [])
             if high_scores:
-                return high_scores[0].get("bestDifficulty")
+                return format_difficulty(high_scores[0].get("bestDifficulty"))
             
         return None
 
