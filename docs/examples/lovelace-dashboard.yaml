@@ -1,0 +1,143 @@
+title: MineMonitor
+views:
+  - title: Mining Overview
+    path: mining-overview
+    badges: []
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: >
+              # MineMonitor
+              
+              Current status of your mining operation
+            
+          - type: glance
+            title: System Status
+            entities:
+              - entity: sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_workers_count
+                name: Workers
+                icon: mdi:account-group
+              - entity: sensor.bitcoin_network_blocks
+                name: Block Height
+                icon: mdi:cube-outline
+              - entity: sensor.bitcoin_mining_all_time_best_difficulty
+                name: Best Score
+                icon: mdi:trophy
+      
+      - type: horizontal-stack
+        cards:
+          - type: gauge
+            entity: sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w1_hash_rate
+            name: Worker 1 Hashrate
+            unit: 'TH/s'
+            min: 0
+            max: 500
+            severity:
+              green: 300
+              yellow: 200
+              red: 0
+          - type: gauge
+            entity: sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w2_hash_rate
+            name: Worker 2 Hashrate
+            unit: 'TH/s'
+            min: 0
+            max: 1200
+            severity:
+              green: 800
+              yellow: 600
+              red: 0
+              
+      - type: custom:mini-graph-card
+        name: Hashrate History
+        icon: mdi:chip
+        entities:
+          - entity: sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w1_hash_rate
+            name: Worker 1
+          - entity: sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w2_hash_rate
+            name: Worker 2
+        hours_to_show: 24
+        points_per_hour: 4
+        line_width: 2
+        show:
+          labels: true
+          points: false
+        aggregate_func: max
+        
+      - type: entities
+        title: Worker Details
+        show_header_toggle: false
+        entities:
+          - entity: sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w1_best_difficulty
+            name: Worker 1 Best Difficulty
+            icon: mdi:pickaxe
+          - entity: sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w1_hash_rate
+            name: Worker 1 Hash Rate
+            icon: mdi:chip
+          - type: divider
+          - entity: sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w2_best_difficulty
+            name: Worker 2 Best Difficulty
+            icon: mdi:pickaxe
+          - entity: sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w2_hash_rate
+            name: Worker 2 Hash Rate
+            icon: mdi:chip
+            
+  - title: Network Stats
+    path: network-stats
+    badges: []
+    cards:
+      - type: markdown
+        content: >
+          # Bitcoin Network
+          
+          Current Bitcoin network statistics
+          
+      - type: glance
+        title: Network Overview
+        entities:
+          - entity: sensor.bitcoin_network_blocks
+            name: Blocks
+            icon: mdi:cube-outline
+          - entity: sensor.bitcoin_network_difficulty
+            name: Difficulty
+            icon: mdi:chart-line
+          - entity: sensor.bitcoin_network_pooled_transactions
+            name: Mempool Tx
+            icon: mdi:ballot
+            
+      - type: custom:mini-graph-card
+        name: Network Difficulty
+        icon: mdi:chart-line
+        entities:
+          - entity: sensor.bitcoin_network_difficulty
+        hours_to_show: 168
+        points_per_hour: 1
+        line_width: 2
+        show:
+          labels: true
+          points: false
+          
+      - type: custom:mini-graph-card
+        name: Network Hashrate
+        icon: mdi:server-network
+        entities:
+          - entity: sensor.bitcoin_network_hash_rate
+        hours_to_show: 168
+        points_per_hour: 1
+        line_width: 2
+        show:
+          labels: true
+          points: false
+          
+      - type: entities
+        title: Network Details
+        show_header_toggle: false
+        entities:
+          - entity: sensor.bitcoin_network_blocks
+            name: Current Block Height
+          - entity: sensor.bitcoin_network_difficulty
+            name: Network Difficulty
+          - entity: sensor.bitcoin_network_hash_rate
+            name: Network Hashrate
+          - entity: sensor.bitcoin_network_pooled_transactions
+            name: Mempool Transactions

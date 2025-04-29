@@ -1,0 +1,153 @@
+# Example automations.yaml entries for MineMonitor
+
+# Alert when a worker goes offline
+- alias: Worker Offline Alert
+  description: Send a notification when a worker goes offline
+  trigger:
+    - platform: state
+      entity_id: 
+        - sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w1_hash_rate
+        - sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w2_hash_rate
+      to: "0"
+      for:
+        minutes: 10
+  condition: []
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "Mining Alert"
+        message: "Worker {{ trigger.to_state.attributes.worker_name }} is offline!"
+        data:
+          push:
+            sound: default
+            category: mining
+          tag: mining-alert
+
+# Alert when hash rate drops significantly
+- alias: Low Hash Rate Alert
+  description: Send a notification when hash rate drops below threshold
+  trigger:
+    - platform: numeric_state
+      entity_id: 
+        - sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w1_hash_rate
+      below: 300000000000  # 300 GH/s
+      for:
+        minutes: 5
+  condition:
+    # Only alert if the worker is supposed to be online
+    - condition: state
+      entity_id: input_boolean.mining_active
+      state: 'on'
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "Mining Alert"
+        message: "Worker {{ trigger.to_state.attributes.worker_name }} hash rate is low: {{ (trigger.to_state.state | float / 1000000000) | round(2) }} GH/s"
+        data:
+          push:
+            sound: default
+            category: mining
+          tag: mining-alert-hashrate
+
+# Record daily mining statistics
+- alias: Record Daily Mining Stats
+  description: Record daily mining statistics at midnight
+  trigger:
+    - platform: time
+      at: "00:00:00"
+  condition: []
+  action:
+    - service: logbook.log
+      data:
+        name: "Daily Mining Stats"
+        message: >
+          Total Hashrate: {{ (states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w1_hash_rate') | float + states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w2_hash_rate') | float) | round(2) }} H/s,
+          Best Difficulty: {{ states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_best_difficulty') }},
+          Workers: {{ states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_workers_count') }}
+    # Also store in statistics
+    - service: statistics.record_statistical_values
+      data:
+        statistic_id: daily_mining_hashrate
+        sum: >
+          {{ (states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w1_hash_rate') | float + states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w2_hash_rate') | float) }}
+
+# Restart mining when workers disconnect
+- alias: Auto Restart Mining
+  description: Restart mining server when workers disconnect
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_workers_count
+      below: 2  # If fewer than 2 workers are connected
+      for:
+        minutes: 15
+  condition:
+    # Only restart if auto-restart is enabled
+    - condition: state
+      entity_id: input_boolean.auto_restart_mining
+      state: 'on'
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "Mining Auto-Restart"
+        message: "Attempting to restart mining server due to worker disconnection"
+    # Use a script to restart the mining server (customize based on your setup)
+    - service: script.restart_mining_server
+    # Wait for restart and refresh data
+    - delay:
+        minutes: 2
+    - service: minemonitor.refresh_data
+
+# New Block Notification
+- alias: New Block Notification
+  description: Send a notification when a new block is mined
+  trigger:
+    - platform: state
+      entity_id: sensor.bitcoin_network_blocks
+  condition:
+    # Only notify if the value actually increased
+    - condition: template
+      value_template: "{{ trigger.to_state.state | int > trigger.from_state.state | int }}"
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "New Bitcoin Block"
+        message: "Block #{{ trigger.to_state.state }} has been mined"
+        data:
+          push:
+            sound: default
+          tag: new-block
+
+# Periodic Refresh
+- alias: Periodic Mining Data Refresh
+  description: Periodically refresh mining data
+  trigger:
+    - platform: time_pattern
+      minutes: "/15"  # Every 15 minutes
+  condition: []
+  action:
+    - service: bitcoin_mining.refresh_data
+
+# Mining Efficiency Report
+- alias: Weekly Mining Efficiency Report
+  description: Generate a weekly report of mining efficiency
+  trigger:
+    - platform: time
+      at: "20:00:00"
+      weekday: "1"  # Monday
+  condition: []
+  action:
+    - service: persistent_notification.create
+      data:
+        title: "Weekly Mining Report"
+        message: >
+          ## Mining Performance for the Week
+
+          - Current Hashrate: {{ (states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w1_hash_rate') | float + states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w2_hash_rate') | float) | round(2) }} H/s
+          - Best Difficulty: {{ states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_best_difficulty') }}
+          - Current Block: {{ states('sensor.bitcoin_network_blocks') }}
+          - Network Difficulty: {{ states('sensor.bitcoin_network_difficulty') }}
+
+          ### Worker Status
+          - Worker 1: {{ states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w1_hash_rate') | float | round(2) }} H/s
+          - Worker 2: {{ states('sensor.bc1q543khxm7uygqec0qm2z4qkyfnjvm5xgpyp24yn_w2_hash_rate') | float | round(2) }} H/s
+        notification_id: weekly_mining_report
