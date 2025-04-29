@@ -23,7 +23,7 @@ from . import DOMAIN, CONF_BTC_ADDRESSES, DEFAULT_PORT, DEFAULT_SCAN_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
-class BitcoinMiningConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class MinemonitorConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Bitcoin Mining."""
 
     VERSION = 1
