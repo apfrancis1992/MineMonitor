@@ -229,7 +229,7 @@ class MinemonitorSensor(CoordinatorEntity, SensorEntity):
             self._attr_device_info = DeviceInfo(
                 identifiers={(DOMAIN, f"{host}:{port}_{btc_address}")},
                 name=f"MineMonitor {btc_address}",
-                manufacturer="Bitcoin",
+                manufacturer="Alex Francis",
                 model="Mining Monitor",
                 configuration_url=f"http://{host}:{port}/api/client/{btc_address}",
             )
@@ -237,7 +237,7 @@ class MinemonitorSensor(CoordinatorEntity, SensorEntity):
             self._attr_device_info = DeviceInfo(
                 identifiers={(DOMAIN, f"{host}:{port}")},
                 name="MineMonitor Network",
-                manufacturer="Bitcoin",
+                manufacturer="Alex Francis",
                 model="Mining Monitor",
                 configuration_url=f"http://{host}:{port}/api",
             )
