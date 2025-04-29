@@ -21,9 +21,16 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from . import DOMAIN, BitcoinMiningUpdateCoordinator
+from . import DOMAIN, MinemonitorUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+def convert_to_th_per_second(hashrate):
+    """Convert hashrate from H/s to TH/s."""
+    if hashrate is None:
+        return None
+    # Convert from H/s to TH/s (1 TH/s = 1,000,000,000,000 H/s)
+    return float(hashrate) / 1_000_000_000_000
 
 # Sensor types for client data
 CLIENT_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
@@ -53,7 +60,7 @@ WORKER_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
         key="hashRate",
         name="Hash Rate",
         icon="mdi:chip",
-        native_unit_of_measurement="H/s",
+        native_unit_of_measurement="TH/s",  # Changed from H/s to TH/s
         state_class=SensorStateClass.MEASUREMENT,
     ),
 )
@@ -76,7 +83,7 @@ NETWORK_SENSOR_TYPES: tuple[SensorEntityDescription, ...] = (
         key="networkhashps",
         name="Network Hash Rate",
         icon="mdi:server-network",
-        native_unit_of_measurement="H/s",
+        native_unit_of_measurement="TH/s",  # Changed from H/s to TH/s
         state_class=SensorStateClass.MEASUREMENT,
     ),
     SensorEntityDescription(
@@ -103,7 +110,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Bitcoin Mining sensors based on a config entry."""
+    """Set up MineMonitor sensors based on a config entry."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     entities = []
 
@@ -113,7 +120,7 @@ async def async_setup_entry(
             # Add client level sensors
             for description in CLIENT_SENSOR_TYPES:
                 entities.append(
-                    BitcoinMiningSensor(
+                    MinemonitorSensor(
                         coordinator,
                         description,
                         entry,
@@ -128,7 +135,7 @@ async def async_setup_entry(
                 for worker_idx, worker in enumerate(coordinator.data["client"][btc_address]["workers"]):
                     for description in WORKER_SENSOR_TYPES:
                         entities.append(
-                            BitcoinMiningSensor(
+                            MinemonitorSensor(
                                 coordinator,
                                 description,
                                 entry,
@@ -142,7 +149,7 @@ async def async_setup_entry(
     if coordinator.data["network"]:
         for description in NETWORK_SENSOR_TYPES:
             entities.append(
-                BitcoinMiningSensor(
+                MinemonitorSensor(
                     coordinator,
                     description,
                     entry,
@@ -155,7 +162,7 @@ async def async_setup_entry(
     # Add info sensors
     if coordinator.data["info"] and "highScores" in coordinator.data["info"] and coordinator.data["info"]["highScores"]:
         entities.append(
-            BitcoinMiningSensor(
+            MinemonitorSensor(
                 coordinator,
                 INFO_SENSOR_TYPES[0],  # High score difficulty
                 entry,
@@ -168,12 +175,12 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class BitcoinMiningSensor(CoordinatorEntity, SensorEntity):
-    """Representation of a Bitcoin Mining sensor."""
+class MinemonitorSensor(CoordinatorEntity, SensorEntity):
+    """Representation of a MineMonitor sensor."""
 
     def __init__(
         self,
-        coordinator: BitcoinMiningUpdateCoordinator,
+        coordinator: MinemonitorUpdateCoordinator,
         description: SensorEntityDescription,
         entry: ConfigEntry,
         btc_address: Optional[str],
@@ -201,7 +208,7 @@ class BitcoinMiningSensor(CoordinatorEntity, SensorEntity):
             self._attr_name = f"Bitcoin Network {description.name}"
         elif sensor_type == "info":
             self._attr_unique_id = f"{entry.entry_id}_info_{description.key}"
-            self._attr_name = f"Bitcoin Mining {description.name}"
+            self._attr_name = f"MineMonitor {description.name}"
 
         # Set up the device info
         host = entry.data[CONF_HOST]
@@ -242,11 +249,19 @@ class BitcoinMiningSensor(CoordinatorEntity, SensorEntity):
             
             if 0 <= self._worker_idx < len(workers):
                 worker_data = workers[self._worker_idx]
-                # Convert string values to float if needed
+                # Get the value
                 value = worker_data.get(self.entity_description.key)
-                if isinstance(value, str) and self.entity_description.key in ["bestDifficulty", "hashRate"]:
+                
+                # Convert string values to float if needed
+                if isinstance(value, str) and self.entity_description.key == "bestDifficulty":
                     try:
                         return float(value)
+                    except (ValueError, TypeError):
+                        return value
+                # Convert hashrates from H/s to TH/s
+                elif self.entity_description.key == "hashRate":
+                    try:
+                        return convert_to_th_per_second(float(value))
                     except (ValueError, TypeError):
                         return value
                 return value
@@ -255,6 +270,15 @@ class BitcoinMiningSensor(CoordinatorEntity, SensorEntity):
         elif self._sensor_type == "network":
             # Return network data
             network_data = self.coordinator.data.get("network", {})
+            
+            # Convert networkhashps from H/s to TH/s if applicable
+            if self.entity_description.key == "networkhashps":
+                try:
+                    value = network_data.get(self.entity_description.key)
+                    return convert_to_th_per_second(float(value))
+                except (ValueError, TypeError):
+                    return network_data.get(self.entity_description.key)
+            
             return network_data.get(self.entity_description.key)
             
         elif self._sensor_type == "info" and self.entity_description.key == "highscore_bestDifficulty":
