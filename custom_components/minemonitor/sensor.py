@@ -21,7 +21,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
 )
 
-from . import DOMAIN, MinemonitorUpdateCoordinator
+from . import DOMAIN  # Import just the DOMAIN constant
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -180,7 +180,7 @@ class MinemonitorSensor(CoordinatorEntity, SensorEntity):
 
     def __init__(
         self,
-        coordinator: MinemonitorUpdateCoordinator,
+        coordinator: DataUpdateCoordinator,  # Changed the type hint to generic DataUpdateCoordinator
         description: SensorEntityDescription,
         entry: ConfigEntry,
         btc_address: Optional[str],
