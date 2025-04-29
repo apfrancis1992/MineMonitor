@@ -1,0 +1,57 @@
+# Services for MineMonitor integration
+
+# Force an immediate update of all mining data
+refresh_data:
+  name: Refresh Data
+  description: Force an immediate update of all mining data
+  fields:
+    config_entry_id:
+      name: Config Entry ID
+      description: Config entry ID to refresh (leave empty to refresh all)
+      example: 76d99a9fdf3b4e409435311f08c79ff0
+      required: false
+      selector:
+        config_entry:
+          integration: minemonitor
+
+# Add a new Bitcoin address to monitor
+add_btc_address:
+  name: Add Bitcoin Address
+  description: Add a new Bitcoin address to monitor
+  fields:
+    config_entry_id:
+      name: Config Entry ID
+      description: Config entry ID to add the address to
+      example: 76d99a9fdf3b4e409435311f08c79ff0
+      required: true
+      selector:
+        config_entry:
+          integration: minemonitor
+    btc_address:
+      name: Bitcoin Address
+      description: Bitcoin address to add
+      example: bc1qagkj53kpkjndtnng8jxu2v27rnnul2u0052qha
+      required: true
+      selector:
+        text:
+
+# Remove a Bitcoin address from monitoring
+remove_btc_address:
+  name: Remove Bitcoin Address
+  description: Remove a Bitcoin address from monitoring
+  fields:
+    config_entry_id:
+      name: Config Entry ID
+      description: Config entry ID to remove the address from
+      example: 76d99a9fdf3b4e409435311f08c79ff0
+      required: true
+      selector:
+        config_entry:
+          integration: minemonitor
+    btc_address:
+      name: Bitcoin Address
+      description: Bitcoin address to remove
+      example: bc1qagkj53kpkjndtnng8jxu2v27rnnul2u0052qha
+      required: true
+      selector:
+        text:
