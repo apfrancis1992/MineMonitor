@@ -297,7 +297,6 @@ class MinemonitorSensor(CoordinatorEntity, SensorEntity):
             # Use a shortened BTC address for client device
             short_address = f"{btc_address[:6]}...{btc_address[-6:]}"
             self._attr_device
-elif sensor_type == "client" and btc_address:
             # Use a shortened BTC address for client device
             short_address = f"{btc_address[:6]}...{btc_address[-6:]}"
             self._attr_device_info = DeviceInfo(
