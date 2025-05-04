@@ -21,6 +21,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.update_coordinator import (
@@ -202,6 +203,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         port,
         btc_addresses,
         scan_interval,
+        entry.entry_id
     )
 
     await coordinator.async_config_entry_first_refresh()
@@ -237,6 +239,7 @@ class BitcoinMiningUpdateCoordinator(DataUpdateCoordinator):
         port: int,
         btc_addresses: List[str],
         scan_interval: int,
+        entry_id: str,
     ) -> None:
         """Initialize."""
         self.session = session
@@ -244,6 +247,7 @@ class BitcoinMiningUpdateCoordinator(DataUpdateCoordinator):
         self.port = port
         self.btc_addresses = btc_addresses
         self.base_url = f"http://{host}:{port}/api"
+        self.entry_id = entry_id
         
         super().__init__(
             hass,
@@ -269,6 +273,16 @@ class BitcoinMiningUpdateCoordinator(DataUpdateCoordinator):
                         if resp.status == 200:
                             client_data = await resp.json()
                             data["client"][btc_address] = client_data
+                            
+                            # Check for new workers and trigger a reload if needed
+                            if self.data and "client" in self.data and btc_address in self.data["client"]:
+                                current_workers = set(w["name"] for w in self.data["client"][btc_address].get("workers", []))
+                                new_workers = set(w["name"] for w in client_data.get("workers", []))
+                                
+                                if new_workers - current_workers:
+                                    _LOGGER.info(f"New workers detected for {btc_address}: {new_workers - current_workers}")
+                                    # Schedule a reload to create entities for new workers
+                                    async_dispatcher_send(self.hass, f"{DOMAIN}_new_workers", self.entry_id)
                         else:
                             _LOGGER.error("Failed to fetch client data for %s: %s", 
                                           btc_address, resp.status)
