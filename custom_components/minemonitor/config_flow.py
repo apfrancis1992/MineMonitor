@@ -5,6 +5,7 @@ import logging
 import voluptuous as vol
 import aiohttp
 import asyncio
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 from homeassistant import config_entries
